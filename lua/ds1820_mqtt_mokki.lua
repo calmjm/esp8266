@@ -10,7 +10,8 @@ mqtt:on("offline", function(con)
   print ("Offline")
   node.restart()
 end)
-mqtt:connect("192.168.2.1", 1883, 0)
+mqtt:connect("192.168.2.1", 1883, 0, 1, function(client) print("connected") end, 
+                                     function(client, reason) print("failed reason: "..reason) end)
 
 tmr.alarm(0, 60000, 1, function()
     print('Measuring..')
