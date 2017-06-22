@@ -1,12 +1,16 @@
 IO_PIN = 3 -- gpio0
-state = 0 -- OFF
+state = 0
 
 t = require('ds18b20')
-t.setup(4) -- gpio2
+t.setup(4)
 addrs = t.addrs()
 for i=1, table.getn(addrs) do print(t.read(addrs[i])) end
 
 m = mqtt.Client("esp2", 120)
+m:on("connect", function(con)
+  print ("Connected")
+  m:subscribe("trigger", 0, function(conn) print("trigger subscribe success") end)
+  end)
 m:on("offline", function(con)
   print ("Offline")
   node.restart()
@@ -27,12 +31,12 @@ m:on("message", function(conn, topic, data)
   end
 end)
 
-m:connect("192.168.0.1", 1883, 0, 1,
-  function(client)
+m:connect("192.168.2.1", 1883, 0, 1, 
+  function(client) 
     print("Connected to MQTT")
-    m:subscribe("trigger", 0, function(conn) print("Trigger subscribed successfully") end)
-  end,
-  function(client, reason)
+    m:subscribe("trigger", 0, function(conn) print("trigger subscribe success") end) 
+  end, 
+  function(client, reason) 
     print("Failed to connect, reason: " .. reason)
     node.restart()
   end)
@@ -45,6 +49,6 @@ tmr.alarm(0, 60000, 1, function()
     end
     print(output)
     m:publish("mokkimittaukset", output, 2, 0, function(conn)
-      print("Sent data")
+      print("sent")
     end)
 end)
