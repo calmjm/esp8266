@@ -5,7 +5,7 @@ FREQ = 1000
 red_value = 150
 green_value = 55
 blue_value = 25
-mode = "0"
+mode = "0" -- 0 = trigger from pin, 1 = always on
 lit_time = 120
 trigger_on = 0
 m = mqtt.Client("esppwm", 120)
@@ -55,7 +55,9 @@ function trigger_up()
   m:publish("kaytava_pir", "1", 2, 0, function(conn)
     print("Movement detected!")
   end)
-  tmr.alarm(0, lit_time * 1000, 0, trigger_down)
+  if mode == "0" then
+    tmr.alarm(0, lit_time * 1000, 0, trigger_down)
+  end
   if mode == "0" and trigger_on == 0 then
     trigger_on = 1
     print("Setting leds on")
