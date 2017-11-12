@@ -10,13 +10,14 @@ m:on("connect", function(con)
   tmr.alarm(0, 1000, 0, function ()
     m:subscribe("rinkula",0, function(conn) print("rinkula subscribe success") end)
   end)
-
 end)
-m:on("offline", function(con) print ("Offline") end)
-m:connect("192.168.0.1", 1883, 0)
+
+m:on("offline", function(con)
+  print ("Offline")
+  node.restart()
+end)
 
 m:on("message", function(conn, topic, data)
-  print(topic .. ":" )
   if data ~= nil then
     if topic == "rinkula" then
       ring = data
@@ -26,3 +27,5 @@ m:on("message", function(conn, topic, data)
     ws2812.write(ring, bar)
   end
 end)
+
+m:connect("192.168.0.1", 1883, 0)
