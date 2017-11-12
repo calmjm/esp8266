@@ -1,3 +1,8 @@
+ws2812.init(ws2812.MODE_DUAL)
+ring = string.char(25, 0, 0)
+bar = string.char(0, 25, 0)
+ws2812.write(ring, bar)
+
 m = mqtt.Client("dualespws", 120)
 m:on("connect", function(con)
   print ("Connected")
@@ -14,9 +19,10 @@ m:on("message", function(conn, topic, data)
   print(topic .. ":" )
   if data ~= nil then
     if topic == "rinkula" then
-      ws2812.write(4, data)
+      ring = data
     else
-      ws2812.write(3, data)
+      bar = data
     end
+    ws2812.write(ring, bar)
   end
 end)
