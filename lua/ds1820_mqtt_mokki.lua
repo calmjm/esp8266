@@ -1,8 +1,17 @@
 IO_PIN = 3 -- gpio0
+DS_PIN = 2 -- gpio4
 state = 0
+ws2812.init() -- gpio2
+
+if adc.force_init_mode(adc.INIT_VDD33)
+then
+  node.restart()
+  return
+end
+print("System voltage (mV):", adc.readvdd33())
 
 t = require('ds18b20')
-t.setup(4)
+t.setup(DS_PIN)
 addrs = t.addrs()
 for i=1, table.getn(addrs) do print(t.read(addrs[i])) end
 
@@ -47,6 +56,9 @@ tmr.alarm(0, 60000, 1, function()
     for i=1, table.getn(addrs) do
         output = output .. t.read(addrs[i]) .. " "
     end
+    vcc = adc.readvdd33()
+    rssi = wifi.sta.getrssi()
+    output = output .. " " .. vcc .. " " .. rssi
     print(output)
     m:publish("mokkimittaukset", output, 2, 0, function(conn)
       print("sent")

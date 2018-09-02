@@ -6,6 +6,7 @@ function startup()
         return
         end
     print('Start.')
+    dofile('telnet.lua')
     dofile('ds1820_mqtt_mokki.lua')
     end
 
