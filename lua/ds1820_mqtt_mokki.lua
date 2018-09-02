@@ -1,7 +1,38 @@
 IO_PIN = 3 -- gpio0
 DS_PIN = 2 -- gpio4
-state = 0
 ws2812.init() -- gpio2
+state = 0
+timer_round = 0
+fade_round = 0
+buffer = ws2812.newBuffer(15, 3)
+buffer:fill(0, 0, 0)
+
+function start_timer()
+  tmr.alarm(1, 60000, tmr.ALARM_AUTO, function(
+    for i=1, 15 do
+      if i<timer_round do 
+        buffer:set(i, 0, 0, 0)
+        ws2812.write(buffer)
+      end
+    end
+    timer_round = timer_round + 1
+    if timer_round == 15 do
+      tmr.unregister(1)
+    end
+  end)
+end
+
+function stop_timer()
+  fade_round = 0
+  tmr:alarm(2, 50, tmr.ALARM_AUTO, function(
+    buffer:fade(2)
+    ws2812.write(buffer)
+    fade_round = fade_round + 1
+    if fade_round == 8 do 
+      tmr.unregister(2)
+    end
+  end)
+end
 
 if adc.force_init_mode(adc.INIT_VDD33)
 then
@@ -32,10 +63,13 @@ m:on("message", function(conn, topic, data)
       print("Switching ON")
       gpio.write(IO_PIN, gpio.HIGH)
       state = 1
+      timer_round = 0
+      start_timer()
     else
       print("Swithcing OFF")
       gpio.write(IO_PIN, gpio.LOW)
       state = 0
+      stop_timer()
     end
   end
 end)
@@ -64,3 +98,5 @@ tmr.alarm(0, 60000, 1, function()
       print("sent")
     end)
 end)
+
+
