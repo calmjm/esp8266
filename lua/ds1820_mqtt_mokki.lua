@@ -1,34 +1,45 @@
 IO_PIN = 3 -- gpio0
 DS_PIN = 2 -- gpio4
 ws2812.init() -- gpio2
+t = require('modds18b20')
 state = 0
 timer_round = 0
 fade_round = 0
 buffer = ws2812.newBuffer(15, 3)
 buffer:fill(0, 0, 0)
+ws2812.write(buffer)
 
 function start_timer()
-  tmr.alarm(1, 60000, tmr.ALARM_AUTO, function(
+  for i=1, 15 do
+    buffer:set(i, 100, 100, 100)
+  end
+  ws2812.write(buffer)
+  tmr.alarm(1, 1000, tmr.ALARM_AUTO, function()
+    print('ON timer round ' .. timer_round)
     for i=1, 15 do
-      if i<timer_round do 
+      if i == timer_round then
         buffer:set(i, 0, 0, 0)
         ws2812.write(buffer)
       end
     end
     timer_round = timer_round + 1
-    if timer_round == 15 do
-      tmr.unregister(1)
+    if timer_round == 16 then
+      print("Swithcing OFF")
+      gpio.write(IO_PIN, gpio.LOW)
+      state = 0
+      stop_timer()
     end
   end)
 end
 
 function stop_timer()
+  tmr.unregister(1)
   fade_round = 0
-  tmr:alarm(2, 50, tmr.ALARM_AUTO, function(
+  tmr.alarm(2, 50, tmr.ALARM_AUTO, function()
     buffer:fade(2)
     ws2812.write(buffer)
     fade_round = fade_round + 1
-    if fade_round == 8 do 
+    if fade_round == 8 then
       tmr.unregister(2)
     end
   end)
@@ -41,7 +52,6 @@ then
 end
 print("System voltage (mV):", adc.readvdd33())
 
-t = require('ds18b20')
 t.setup(DS_PIN)
 addrs = t.addrs()
 for i=1, table.getn(addrs) do print(t.read(addrs[i])) end
@@ -63,7 +73,7 @@ m:on("message", function(conn, topic, data)
       print("Switching ON")
       gpio.write(IO_PIN, gpio.HIGH)
       state = 1
-      timer_round = 0
+      timer_round = 1
       start_timer()
     else
       print("Swithcing OFF")
@@ -92,11 +102,9 @@ tmr.alarm(0, 60000, 1, function()
     end
     vcc = adc.readvdd33()
     rssi = wifi.sta.getrssi()
-    output = output .. " " .. vcc .. " " .. rssi
+    output = output .. " " .. vcc .. " " .. rssi .. " " .. state
     print(output)
     m:publish("mokkimittaukset", output, 2, 0, function(conn)
       print("sent")
     end)
 end)
-
-
