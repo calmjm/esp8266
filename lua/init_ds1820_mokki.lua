@@ -4,10 +4,11 @@ function startup()
     if abort == true then
         print('Start aborted!')
         return
-        end
-    print('Start.')
-    dofile('ds1820_mqtt_mokki.lua')
     end
+    print('Start.')
+    dofile('telnet.lua')
+    dofile('ds1820_mqtt_mokki.lua')
+end
 
 gpio.mode(IO_PIN, gpio.OUTPUT)
 gpio.write(IO_PIN, gpio.LOW)
