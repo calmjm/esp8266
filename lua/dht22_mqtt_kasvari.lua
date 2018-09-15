@@ -13,12 +13,12 @@ lux = bh1750.read_lux()
 print("lux: " .. lux)
 
 m = mqtt.Client("esp4", 120)
-m:on("connect", function(con)
-  print ("Connected")
+m:on("connect", function(con) 
+  print ("Connected") 
   m:subscribe("lampo",0, function(conn) print("subscribe success") end)
 end)
 
-m:on("offline", function(con)
+m:on("offline", function(con) 
   print ("Offline")
   node.restart() 
 end)
@@ -40,7 +40,7 @@ tmr.alarm(0, 60000, 1, function()
     if ( status == dht.OK ) then
         output = output .. temp .. " " .. humi .. " " .. lux
         print(output)
-        m:publish("kasvarimittaukset", output, 2, 0, function(conn)
+        m:publish("kasvarimittaukset", output, 2, 0, function(conn) 
             print("sent")
         end)
     else

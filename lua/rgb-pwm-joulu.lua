@@ -5,10 +5,10 @@ FREQ = 1000
 red_value = 150
 green_value = 55
 blue_value = 25
-mode = "0"
-lit_time = 120
+mode = "0" -- 0 = trigger from pin, 1 = always on
+lit_time = 60
 trigger_on = 0
-m = mqtt.Client("esppwm", 120)
+m = mqtt.Client("esppwmjoulu", 120)
 
 function split(input)
   local arr={}; i = 1
@@ -27,46 +27,23 @@ function led(r, g, b)
   pwm.setduty(BLUE, b)
 end
 
-function trigger_down()
-  local rs = red_value/100
-  local gs = green_value/100
-  local bs = blue_value/100
-  local rv = red_value
-  local gv = green_value
-  local bv = blue_value
-  print("Setting leds off")
-  for i=1,100 do 
-    rv = rv - rs
-    gv = gv - gs
-    bv = bv - bs
+
+function trigger_change()
+  local rv = pwm.getduty(RED)
+  local gv = pwm.getduty(GREEN)
+  local bv = pwm.getduty(BLUE)
+  local rs = (red_value-rv)/200
+  local gs = (green_value-gv)/200
+  local bs = (blue_value-bv)/200
+  print("Setting leds to new state")
+  for i=1, 200 do
+    rv = rv + rs
+    gv = gv + gs
+    bv = bv + bs
     led(rv, gv, bv)
     tmr.delay(10)
   end
-  trigger_on = 0
-end
-
-function trigger_up()
-  local rs = red_value/100
-  local gs = green_value/100
-  local bs = blue_value/100
-  local rv = 0
-  local gv = 0
-  local bv = 0
-  m:publish("kaytava_pir", "1", 2, 0, function(conn)
-    print("Movement detected!")
-  end)
-  tmr.alarm(0, lit_time * 1000, 0, trigger_down)
-  if mode == "0" and trigger_on == 0 then
-    trigger_on = 1
-    print("Setting leds on")
-    for i=1, 100 do
-      rv = rv + rs
-      gv = gv + gs
-      bv = bv + bs
-      led(rv, gv, bv)
-      tmr.delay(10)
-    end
-  end
+  tmr.alarm(0, lit_time * 1000, 0, trigger_change)
 end
 
 m:on("offline", function(con)
@@ -87,17 +64,16 @@ end)
 m:connect("192.168.0.1", 1883, 0, 1,
   function(client)
     print("Connected to MQTT")
-    m:subscribe("kaytavapwm", 0, function(conn) print("kaytavapwm subscribe success") end)
+    m:subscribe("joulupwm", 0, function(conn) print("joulupwm subscribe success") end)
   end,
   function(client, reason)
     print("Failed to connect, reason: " .. reason)
     node.restart()
   end)
 
-gpio.mode(INPUT_PIN, gpio.INT)
-gpio.trig(INPUT_PIN, "up", trigger_up)
 pwm.setup(RED, FREQ, 0)
 pwm.setup(GREEN, FREQ, 0)
 pwm.setup(BLUE, FREQ, 0)
-led(0, 0, 0)
+led(10, 10, 10)
 print("Startup done")
+trigger_change()

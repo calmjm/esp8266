@@ -5,7 +5,7 @@ function startup()
     end
     print('Start.')
     dofile("telnet.lua")
-    dofile('ws2812_mqtt_dual.lua')
+    dofile('ws2812_mqtt_haa.lua')
 end
 
 uart.setup(0, 9600, 8, 0, 1, 1)

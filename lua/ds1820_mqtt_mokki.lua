@@ -14,7 +14,7 @@ function start_timer()
     buffer:set(i, 100, 100, 100)
   end
   ws2812.write(buffer)
-  tmr.alarm(1, 1000, tmr.ALARM_AUTO, function()
+  tmr.alarm(1, 60000, tmr.ALARM_AUTO, function()
     print('ON timer round ' .. timer_round)
     for i=1, 15 do
       if i == timer_round then

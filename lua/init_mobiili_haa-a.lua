@@ -1,8 +1,8 @@
 ABORT_PIN = 5 -- gpio14
-DS_PIN = 4 -- gpio2
-
+D_PIN = 4 -- gpio2
 t = require('modds18b20')
-t.setup(DS_PIN)
+
+t.setup(D_PIN)
 addrs = t.addrs()
 for i=1, table.getn(addrs) do print(t.read(addrs[i])) end
 
@@ -18,10 +18,10 @@ function startup()
     print('Start.')
     if adc.force_init_mode(adc.INIT_VDD33)
     then
-      node.restart()
-      return -- don't bother continuing, the restart is scheduled
+        node.restart()
+        return
     end
-
+    vcc = adc.readvdd33(0)
     tmr.alarm(1, 300, 1, function()
         if wifi.sta.getip() == nil then
             print("Waiting for IP address...")
@@ -40,33 +40,26 @@ function startup()
     end
 
 function remote_control()
-    print('Creating MQTT client')
-    m = mqtt.Client("kompostiesp", 120)
-    print('Registering connect')
-    m:on("connect", function(con) 
-        print ("Connected")
-        output ="kompostiesp: "
-        for i=1, table.getn(addrs) do 
-            output = output .. t.read(addrs[i]) .. " " 
-        end
-        output = output .. adc.readvdd33(0)
+    -- status,temp,humi,temp_decimial,humi_decimial = dht.read(D_PIN)
+    temp = t.read(addrs[1])
+    if ( temp ~= 85 ) then
+        humi = 0
+        R = wifi.sta.getrssi()
+        output = "temp=" .. temp .. "&humi=" .. humi .. "&vcc=" .. vcc .. "&rssi=" .. R
         print(output)
-        m:publish("komposti", output, 2, 0, function(conn)
-            print("Sent")
-            tmr.alarm(1, 100, 0, function()
-                print("Sleeping...")
-                node.dsleep(60 * 1000000)
+        http.post("http://172.25.0.1/m.php?a=1", "Content-type: application/x-www-form-urlencoded\r\n", output, 
+            function(status_code, body, headers)
+                if ( status_code == -1) then
+                    print("Failed")
+                else
+                    print("Sent")
+                end
+                tmr.alarm(1, 100, 0, function()
+                    print("Sleeping...")
+                    node.dsleep(60 * 1000000)
             end)
         end)
-    end)
-    print('Registering offline')
-    m:on("offline", function(con) 
-      print ("Offline")
-      -- node.restart() 
-    end)
-    print('Connecting...')
-    m:connect("192.168.0.1", 1883, 0)
-    print('Finished initialization')
     end
+end
 
 startup()
